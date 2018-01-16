@@ -2,6 +2,7 @@ package net.osmand.plus.routing;
 
 import net.osmand.plus.OsmAndFormatter;
 import net.osmand.plus.OsmandApplication;
+import net.osmand.plus.TargetPointsHelper.TargetPoint;
 import net.osmand.router.TurnType;
 
 public class RouteDirectionInfo {
@@ -22,6 +23,16 @@ public class RouteDirectionInfo {
 	
 	private String destinationName;
 
+	private TargetPoint targetPoint;
+
+	public TargetPoint getTargetPoint() {
+		return targetPoint;
+	}
+
+	public void setTargetPoint(TargetPoint targetPoint) {
+		this.targetPoint = targetPoint;
+	}
+
 	public String getDestinationName() {
 		return destinationName;
 	}
@@ -37,17 +48,11 @@ public class RouteDirectionInfo {
 	}
 	
 	public String getDescriptionRoute(OsmandApplication ctx) {
-		if (!descriptionRoute.endsWith(OsmAndFormatter.getFormattedDistance(distance, ctx))) {
-			descriptionRoute += " " + OsmAndFormatter.getFormattedDistance(distance, ctx);
-		}
-		return descriptionRoute.trim();
+		return (descriptionRoute + " " + OsmAndFormatter.getFormattedDistance(distance, ctx)).trim();
 	}
 	
 	public String getDescriptionRoute(OsmandApplication ctx, int collectedDistance) {
-		if (!descriptionRoute.endsWith(OsmAndFormatter.getFormattedDistance(collectedDistance, ctx))) {
-			descriptionRoute += " " + OsmAndFormatter.getFormattedDistance(collectedDistance, ctx);
-		}
-		return descriptionRoute.trim();
+		return (descriptionRoute + " " + OsmAndFormatter.getFormattedDistance(collectedDistance, ctx)).trim();
 	}
 
 	public String getDescriptionRoutePart() {

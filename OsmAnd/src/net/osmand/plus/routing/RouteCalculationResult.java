@@ -1,8 +1,7 @@
 package net.osmand.plus.routing;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import android.content.Context;
+import android.support.annotation.Nullable;
 
 import net.osmand.Location;
 import net.osmand.binary.BinaryMapRouteReaderAdapter.RouteRegion;
@@ -12,12 +11,15 @@ import net.osmand.data.LocationPoint;
 import net.osmand.plus.ApplicationMode;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
+import net.osmand.plus.TargetPointsHelper.TargetPoint;
+import net.osmand.plus.routing.AlarmInfo.AlarmInfoType;
 import net.osmand.router.RouteSegmentResult;
 import net.osmand.router.TurnType;
-import net.osmand.plus.routing.AlarmInfo.AlarmInfoType;
-import net.osmand.util.Algorithms;
 import net.osmand.util.MapUtils;
-import android.content.Context;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static net.osmand.binary.RouteDataObject.HEIGHT_UNDEFINED;
 
@@ -847,37 +849,60 @@ public class RouteCalculationResult {
 		next.directionInfo = null;
 		return null;
 	}
-	
-	
+
+	public List<RouteDirectionInfo> getRouteDirectionsWithPoints(@Nullable List<TargetPoint> targetPoints) {
+		List<RouteDirectionInfo> list = currentDirectionInfo == 0 ? directions :
+				directions.subList(currentDirectionInfo + 1, directions.size());
+		List<RouteDirectionInfo> agreggatedDirections = new ArrayList<>();
+		RouteDirectionInfo p = null;
+		int nextPoint = 0;
+		int nd = currentDirectionInfo + 1;
+		while(targetPoints != null && nextPoint < targetPoints.size()
+				&& nextPoint < intermediatePoints.length && intermediatePoints[nextPoint] < nd) {
+			nextPoint++;
+		}
+
+		for(RouteDirectionInfo i : list) {
+
+			if(p == null ||
+					(i.getTurnType() != null && !i.getTurnType().isSkipToSpeak())) {
+				p = new RouteDirectionInfo(i.getAverageSpeed(), i.getTurnType());
+				p.routePointOffset = i.routePointOffset;
+				p.routeEndPointOffset = i.routeEndPointOffset;
+				p.setDestinationName(i.getDestinationName());
+				p.setRef(i.getRef());
+				p.setStreetName(i.getStreetName());
+				p.setDescriptionRoute(i.getDescriptionRoutePart());
+				agreggatedDirections.add(p);
+			}
+			float time = i.getExpectedTime() + p.getExpectedTime();
+			p.distance += i.distance;
+			p.setAverageSpeed(p.distance / time);
+			p.afterLeftTime = i.afterLeftTime;
+			while(targetPoints != null && nextPoint < targetPoints.size()
+					&& nextPoint < intermediatePoints.length && intermediatePoints[nextPoint] < nd) {
+				p = new RouteDirectionInfo(i.getAverageSpeed(), i.getTurnType());
+				p.routePointOffset = i.routePointOffset;
+				p.routeEndPointOffset = i.routeEndPointOffset;
+				p.setDestinationName(i.getDestinationName());
+				p.setRef(i.getRef());
+				p.setStreetName("intermediate point " + (nextPoint + 1));
+				p.setDescriptionRoute("intermediate point " + (nextPoint + 1));
+				p.setTargetPoint(targetPoints.get(nextPoint));
+				agreggatedDirections.add(p);
+				nextPoint++;
+			}
+			nd++;
+		}
+
+		return agreggatedDirections;
+	}
 	
 	public List<RouteDirectionInfo> getRouteDirections() {
 		if(currentDirectionInfo < directions.size() - 1){
 			if(cacheCurrentTextDirectionInfo != currentDirectionInfo) {
 				cacheCurrentTextDirectionInfo = currentDirectionInfo;
-				List<RouteDirectionInfo> list = currentDirectionInfo == 0 ? directions : 
-					directions.subList(currentDirectionInfo + 1, directions.size());
-				cacheAgreggatedDirections = new ArrayList<RouteDirectionInfo>();
-				RouteDirectionInfo p = null;
-				for(RouteDirectionInfo i : list) {
-//					if(p == null || !i.getTurnType().isSkipToSpeak() ||
-//							(!Algorithms.objectEquals(p.getRef(), i.getRef()) &&
-//									!Algorithms.objectEquals(p.getStreetName(), i.getStreetName()))) {
-					if(p == null || 
-							(i.getTurnType() != null && !i.getTurnType().isSkipToSpeak())) {
-						p = new RouteDirectionInfo(i.getAverageSpeed(), i.getTurnType());
-						p.routePointOffset = i.routePointOffset;
-						p.routeEndPointOffset = i.routeEndPointOffset;
-						p.setDestinationName(i.getDestinationName());
-						p.setRef(i.getRef());
-						p.setStreetName(i.getStreetName());
-						p.setDescriptionRoute(i.getDescriptionRoutePart());
-						cacheAgreggatedDirections.add(p);
-					}
-					float time = i.getExpectedTime() + p.getExpectedTime();
-					p.distance += i.distance;
-					p.setAverageSpeed(p.distance / time);
-					p.afterLeftTime = i.afterLeftTime;
-				}
+				cacheAgreggatedDirections = getRouteDirectionsWithPoints(null);
 			}
 			return cacheAgreggatedDirections;
 		}

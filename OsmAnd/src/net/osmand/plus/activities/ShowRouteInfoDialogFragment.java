@@ -51,6 +51,7 @@ import net.osmand.plus.OsmAndFormatter;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.OsmandSettings;
 import net.osmand.plus.R;
+import net.osmand.plus.TargetPointsHelper;
 import net.osmand.plus.helpers.GpxUiHelper;
 import net.osmand.plus.helpers.GpxUiHelper.GPXDataSetAxisType;
 import net.osmand.plus.helpers.GpxUiHelper.GPXDataSetType;
@@ -134,7 +135,9 @@ public class ShowRouteInfoDialogFragment extends DialogFragment {
 		View bottomShadowView = inflater.inflate(R.layout.list_shadow_footer, listView, false);
 		listView.addFooterView(bottomShadowView, null, false);
 
-		adapter = new RouteInfoAdapter(helper.getRouteDirections());
+		TargetPointsHelper targetPointsHelper = app.getTargetPointsHelper();
+		List<RouteDirectionInfo> list =  helper.getRoute().getRouteDirectionsWithPoints(targetPointsHelper.getIntermediatePoints());
+		adapter = new RouteInfoAdapter(list);
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			@Override
